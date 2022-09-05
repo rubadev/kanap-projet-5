@@ -1,90 +1,85 @@
-const productID = window.location.search.split("?").join("");
+//recuperrer l'ID du produit
+const keyUrl = window.location.search;
+const keyValue = new URLSearchParams(keyUrl);
+const id = keyValue.get('id');
 
-let itemData =[];
-const fetchItem = async() => {
-    await fetch (`http://localhost:3000/api/products/${productID}`).then((res) => res.json())
-    .then((promi) => {
-        itemData = promi;
-      // console.log(itemData);
-    });
-   };
+let url = `http://localhost:3000/api/products/${id}`;
 
-const itemDisplay = async() =>{
-    await fetchItem(); 
+///appel de l'API: Catalogue de canapés
+fetch(url)
+.then(data => { if (data.ok) { return data.json(); }})
+.then(product => {
+    
+    //image du produit
+    const containerImg = document.querySelector('.item__img');
+    const structureImg = `<img src="${product.imageUrl}" alt=${product.altTxt}>`
+    containerImg.innerHTML = structureImg;
 
-    let image_div = document.querySelector(".item__img");
-    let image =document.createElement("img");
-    image.src=`${itemData.imageUrl}`;
-    image.alt="Photographie d'un canapé";
-    image_div.appendChild(image);
-   
-    document.getElementById("title").textContent =`${itemData.name}`;
-    document.getElementById("price").textContent =`${itemData.price}`;
-    document.getElementById("description").textContent =`${itemData.description}`;
+    //titre du produit
+    const containerTitle = document.querySelector('#title');
+    const structureTitle = `${product.name}`
+    containerTitle.innerHTML = structureTitle;
 
-    let color=document.getElementById("colors");
-    itemData.colors.forEach(coleur => {
-        let option= document.createElement("option");
-        option.innerHTML=`${coleur}`;
-        option.value=`${coleur}`;
-        color.appendChild(option);
-    });
+    //prix du produit
+    const containerPrice = document.querySelector('#price');
+    const structurePrice = `${product.price}`
+    containerPrice.innerHTML = structurePrice;
 
-    ajouterAuPanier();
-};
+    //Description du produit
+    const containerDescription = document.querySelector('#description');
+    const structureDescription = `${product.description}`
+    containerDescription.innerHTML = structureDescription;
 
-itemDisplay();
-
-
-const ajouterAuPanier = () => {
-   let botton = document.getElementById("addToCart");
-   
-   botton.addEventListener("click", () => {
-     let itemTable = JSON.parse(localStorage.getItem("produit"));
-     let select = document.getElementById("colors");
-     let quantityValeur =document.getElementById("quantity");
-     
-    const itemDataNewObjet = Object.assign({},itemTable ,{
-        colorSelected :`${select.value}`,
-        quantity :`${quantityValeur.value}`,
-        id : itemData._id,
-        name : itemData.name,
-        img : itemData.imageUrl,
-        price: itemData.price
-
+    //couleur du produit
+    const containerColor = document.getElementById('colors');
+    product.colors.forEach(color => {
+        
+        structureColor = document.createElement("option")
+        structureColor.value = `${color}`
+        structureColor.innerHTML = `${color}`
+        
+        containerColor.appendChild(structureColor);
 
     });
     
-    
-    if (itemTable == null){
-        itemTable=[];
-        itemTable.push(itemDataNewObjet);
-        console.log(itemTable);
-        localStorage.setItem("produit", JSON.stringify(itemTable));
-   } 
-   else if(itemTable != null){
-    for(i=0; i<itemTable.length ; i++){
-        if(itemTable[i].id == itemData._id && itemTable[i].colorSelected == select.value){
-           return (itemTable[i].quantity++ , 
-                   localStorage.setItem(("produit"),JSON.stringify(itemTable)),
-                   (itemTable = JSON.parse(localStorage.getItem("produit")))
-                   );
-           
-        }
+}).catch(err => { console.log('ERREUR : ' + err)});
+
+
+
+
+///******** Ajout au panier ***********
+
+
+let button = document.getElementById("addToCart");
+button.onclick = () => {
+
+    //recupérer la couleur séléctionner 
+    const containerColor = document.getElementById('colors');
+    let selcteColor = containerColor.options[containerColor.selectedIndex].text;
+    //recupérer la quantitée séléctionner 
+    let selcteQuantity = document.querySelector("#quantity").value;
+    //crée un tableau du produit 
+    let product = {
+        id : id,
+        color : selcteColor,
+        quantity : selcteQuantity 
+    } 
+
+    if (containerColor.value == ""){
+
+        alert("veuillez choisir une couleur");
+
+    }else if(selcteQuantity == 0){
+
+        alert("veuillez choisir une quantitée");
+
+    } else{
+        
+        //sauvegarder le produit 
+        ajouterAuPanier(product);
+        alert("votre article a été ajouter au panier");
     }
-    for(i=0; i<itemTable.length ; i++){
-        if(itemTable[i].id == itemData._id && itemTable[i].colorSelected != select.value || itemTable[i].id != itemData._id){
-            return (console.log("new"),
-            itemTable.push(itemDataNewObjet),
-            localStorage.setItem("produit", JSON.stringify(itemTable)),
-            itemTable = JSON.parse(localStorage.getItem("produit"))
-            );
-        }
-    }
-    
-   }
-   })
-   return  (itemTable= JSON.parse(localStorage.getItem("produit"))) ;
-
    
-};
+}
+
+
